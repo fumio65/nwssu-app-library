@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Grid, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export default function AdminLogin() {
@@ -32,12 +32,10 @@ export default function AdminLogin() {
         className="bg-white rounded-2xl border border-gray-100 p-8 w-full max-w-sm shadow-sm"
       >
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center">
-            <Grid size={18} className="text-white" />
-          </div>
+          <img src="/logo.png" alt="NwSSU Connect" className="w-12 h-12 rounded-full object-cover border border-gray-100 shrink-0" />
           <div>
-            <p className="text-sm font-bold text-gray-900">App Library Admin</p>
-            <p className="text-xs text-gray-400">NwSSU</p>
+            <p className="text-sm font-bold text-gray-900">NwSSU Connect Admin</p>
+            <p className="text-xs text-gray-400">Northwest Samar State University</p>
           </div>
         </div>
 

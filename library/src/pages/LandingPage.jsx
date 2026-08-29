@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Download, ExternalLink, Search, Grid, Globe, ChevronRight, Star } from 'lucide-react'
+import { Download, ExternalLink, Search, Grid, Globe, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const BRAND = '#06433C'
 
-function AppCard({ app }) {
+function AppCard({ app, onClick }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4 hover:border-brand-200 hover:shadow-sm transition-all"
+      onClick={onClick}
+      className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col gap-4 hover:border-brand-200 hover:shadow-sm transition-all cursor-pointer"
     >
       <div className="flex items-start gap-4">
         {app.icon_url ? (
@@ -46,26 +48,21 @@ function AppCard({ app }) {
         <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{app.description}</p>
       )}
 
-      {app.screenshots?.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {app.screenshots.slice(0, 3).map((s, i) => (
-            <img key={i} src={s} alt="" className="h-24 w-auto rounded-xl border border-gray-100 shrink-0 object-cover" />
-          ))}
-        </div>
-      )}
-
       <a
         href={app.apk_url ?? '#'}
-        onClick={!app.apk_url ? (e) => e.preventDefault() : undefined}
+        onClick={e => {
+          e.stopPropagation()
+          if (!app.apk_url) e.preventDefault()
+        }}
+        download={!!app.apk_url}
         className={`flex items-center justify-center gap-2 w-full h-10 rounded-xl text-sm font-semibold transition-colors ${
           app.apk_url
             ? 'bg-brand-600 text-white hover:bg-brand-700'
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         }`}
-        download={!!app.apk_url}
       >
         <Download size={15} />
-        {app.apk_url ? 'Download APK' : 'Coming soon'}
+        {app.apk_url ? 'Download' : 'Coming soon'}
       </a>
     </motion.div>
   )
@@ -100,6 +97,7 @@ function LinkCard({ link }) {
 }
 
 export default function LandingPage() {
+  const navigate = useNavigate()
   const [apps, setApps] = useState([])
   const [links, setLinks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -136,37 +134,23 @@ export default function LandingPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[#f5f6f5]">
-      {/* Header */}
-      <header style={{ background: BRAND }} className="sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
-              <Grid size={18} className="text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white leading-tight">NwSSU App Library</p>
-              <p className="text-[11px] text-white/50 leading-tight hidden sm:block">Northwest Samar State University</p>
-            </div>
-          </div>
-
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f5f6f5] flex flex-col">
 
       {/* Hero */}
-      <section style={{ background: BRAND }} className="pb-10">
-        <div className="max-w-4xl mx-auto px-4 pt-8 pb-4">
+      <section style={{ background: BRAND }} className="pb-10 w-full">
+        <div className="px-6 pt-10 pb-4 flex flex-col items-center text-center">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+            <img src="/apple-touch-icon.png" alt="NwSSU Connect" className="w-24 h-24 rounded-full object-cover mx-auto mb-4" />
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight">
-              Northwest Samar State University
+              NwSSU Connect
             </h1>
             <p className="text-white/60 text-sm mb-6">
-              Official apps and web resources for NwSSU students and staff.
+              Your gateway to official NwSSU apps and web resources.
             </p>
           </motion.div>
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative max-w-xl mx-auto w-full">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -179,7 +163,7 @@ export default function LandingPage() {
         </div>
 
         {/* Tabs */}
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="flex justify-center px-6">
           <div className="flex gap-1 bg-white/10 rounded-xl p-1 w-fit">
             {['apps', 'links'].map(tab => (
               <button
@@ -197,7 +181,7 @@ export default function LandingPage() {
       </section>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1">
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[...Array(4)].map((_, i) => (
@@ -205,26 +189,29 @@ export default function LandingPage() {
             ))}
           </div>
         ) : activeTab === 'apps' ? (
-          <>
-            {filteredApps.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="w-14 h-14 rounded-full bg-white border border-gray-100 flex items-center justify-center mx-auto mb-3">
-                  <Grid size={24} className="text-gray-300" />
-                </div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">No apps found</p>
-                <p className="text-xs text-gray-400">
-                  {search ? 'Try a different search term.' : 'No apps have been added yet.'}
-                </p>
+          filteredApps.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="w-14 h-14 rounded-full bg-white border border-gray-100 flex items-center justify-center mx-auto mb-3">
+                <Grid size={24} className="text-gray-300" />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {filteredApps.map(app => <AppCard key={app.id} app={app} />)}
-              </div>
-            )}
-          </>
+              <p className="text-sm font-semibold text-gray-700 mb-1">No apps found</p>
+              <p className="text-xs text-gray-400">
+                {search ? 'Try a different search term.' : 'No apps have been added yet.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {filteredApps.map(app => (
+                <AppCard
+                  key={app.id}
+                  app={app}
+                  onClick={() => navigate(`/apps/${app.id}`)}
+                />
+              ))}
+            </div>
+          )
         ) : (
           <>
-            {/* Link category filter */}
             {linkCategories.length > 1 && (
               <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
                 {linkCategories.map(cat => (
@@ -242,7 +229,6 @@ export default function LandingPage() {
                 ))}
               </div>
             )}
-
             {filteredLinks.length === 0 ? (
               <div className="text-center py-20">
                 <div className="w-14 h-14 rounded-full bg-white border border-gray-100 flex items-center justify-center mx-auto mb-3">
@@ -261,14 +247,6 @@ export default function LandingPage() {
           </>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white mt-8">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
-          <p className="text-xs text-gray-400">© {new Date().getFullYear()} Northwest Samar State University</p>
-
-        </div>
-      </footer>
     </div>
   )
 }

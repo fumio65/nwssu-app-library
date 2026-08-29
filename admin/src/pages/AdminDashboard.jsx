@@ -121,6 +121,92 @@ function IconUploader({ currentUrl, onUploaded }) {
   )
 }
 
+
+// ── Screenshot uploader ───────────────────────────────────────────────────────
+function ScreenshotUploader({ currentUrls, onUploaded }) {
+  const fileRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [screenshots, setScreenshots] = useState(currentUrls ?? [])
+  const [error, setError] = useState(null)
+
+  async function handleFile(e) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const remaining = 5 - screenshots.length
+    const toAdd = files.slice(0, remaining)
+    setError(null)
+    setUploading(true)
+
+    const uploaded = []
+    for (const file of toAdd) {
+      if (!file.type.startsWith('image/')) continue
+      const ext = file.name.split('.').pop()
+      const path = `screenshots/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('app-screenshots')
+        .upload(path, file, { cacheControl: '3600', upsert: false })
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage.from('app-screenshots').getPublicUrl(path)
+        uploaded.push(publicUrl)
+      }
+    }
+
+    const newScreenshots = [...screenshots, ...uploaded]
+    setScreenshots(newScreenshots)
+    onUploaded(newScreenshots)
+    setUploading(false)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  async function handleRemove(url) {
+    try {
+      const path = url.split('/app-screenshots/')[1]
+      if (path) await supabase.storage.from('app-screenshots').remove([path])
+    } catch (err) {
+      console.error('Failed to delete screenshot:', err)
+    }
+    const updated = screenshots.filter(s => s !== url)
+    setScreenshots(updated)
+    onUploaded(updated)
+  }
+
+  return (
+    <div>
+      <div className="flex gap-2 flex-wrap mb-2">
+        {screenshots.map((url, i) => (
+          <div key={i} className="relative">
+            <img src={url} alt="" className="w-20 h-36 object-cover rounded-xl border border-gray-200" />
+            <button
+              type="button"
+              onClick={() => handleRemove(url)}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center"
+            >
+              <X size={10} />
+            </button>
+          </div>
+        ))}
+        {screenshots.length < 5 && (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="w-20 h-36 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 hover:border-brand-400 transition-colors disabled:opacity-50"
+          >
+            {uploading
+              ? <div className="w-4 h-4 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+              : <ImagePlus size={18} className="text-gray-300" />
+            }
+            {!uploading && <span className="text-[9px] text-gray-300 text-center px-1">Add</span>}
+          </button>
+        )}
+      </div>
+      <p className="text-[11px] text-gray-400">Upload up to 5 screenshots (portrait recommended)</p>
+      {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
+      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFile} />
+    </div>
+  )
+}
+
 // ── App form modal ────────────────────────────────────────────────────────────
 function AppModal({ app, onClose, onSave }) {
   const [form, setForm] = useState({
@@ -130,6 +216,8 @@ function AppModal({ app, onClose, onSave }) {
     version: app?.version ?? '',
     apk_url: app?.apk_url ?? '',
     icon_url: app?.icon_url ?? '',
+    changelog: app?.changelog ?? '',
+    screenshots: app?.screenshots ?? [],
     featured: app?.featured ?? false,
   })
   const [saving, setSaving] = useState(false)
@@ -149,6 +237,8 @@ function AppModal({ app, onClose, onSave }) {
       version: form.version.trim() || null,
       apk_url: form.apk_url.trim() || null,
       icon_url: form.icon_url || null,
+      changelog: form.changelog.trim() || null,
+      screenshots: form.screenshots ?? [],
       featured: form.featured,
     }
     const { error } = app?.id
@@ -199,6 +289,23 @@ function AppModal({ app, onClose, onSave }) {
           <p className="text-[11px] text-gray-400 mt-1">
             Upload your APK to GitHub Releases or Google Drive and paste the link here.
           </p>
+        </Field>
+
+        <Field label="Screenshots">
+          <ScreenshotUploader
+            currentUrls={form.screenshots}
+            onUploaded={urls => set('screenshots', urls)}
+          />
+        </Field>
+
+        <Field label="What's new / Changelog">
+          <textarea
+            className={textareaCls}
+            rows={3}
+            value={form.changelog}
+            onChange={e => set('changelog', e.target.value)}
+            placeholder="Describe what's new in this version…"
+          />
         </Field>
 
         <label className="flex items-center gap-2.5 cursor-pointer">
@@ -451,7 +558,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900 mb-1">Sign out?</p>
-                <p className="text-xs text-gray-400">You'll need to sign back in to access the admin panel.</p>
+                <p className="text-xs text-gray-400">You'll need to sign back in to access the NwSSU Connect admin panel.</p>
               </div>
               <div className="flex gap-2 w-full">
                 <button
@@ -476,11 +583,9 @@ export default function AdminDashboard() {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
-              <Grid size={15} className="text-white" />
-            </div>
+            <img src="/apple-touch-icon.png" alt="NwSSU Connect" className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100" />
             <div>
-              <p className="text-sm font-bold text-gray-900">App Library Admin</p>
+              <p className="text-sm font-bold text-gray-900">NwSSU Connect Admin</p>
               <p className="text-xs text-gray-400 hidden sm:block">Northwest Samar State University</p>
             </div>
           </div>
