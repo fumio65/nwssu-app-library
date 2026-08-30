@@ -590,7 +590,7 @@ export default function AdminDashboard() {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="NwSSU Connect" className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100" />
+            <img src="/apple-touch-icon.png" alt="NwSSU Connect" className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100" />
             <div>
               <p className="text-sm font-bold text-gray-900">NwSSU Connect Admin</p>
               <p className="text-xs text-gray-400 hidden sm:block">Northwest Samar State University</p>
