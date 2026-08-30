@@ -80,6 +80,20 @@ function renderPage({
     <p><a class="cta" href="${LIBRARY_DOWNLOAD_URL}">Open CampusFind to view or respond &rarr;</a></p>
     <p class="brand">CampusFind &middot; NWSSU Lost &amp; Found</p>
   </div>
+  <script>
+    // Crawlers (Facebook/Messenger/etc.) never execute this - they only
+    // read the og:* tags above, so the preview card still renders correctly.
+    // Real browsers run it immediately, sending a human here (no app
+    // installed - Android App Links intercepts the link before it ever
+    // reaches this page when the app IS installed) on to the download page.
+    // Safe here specifically because this page is served by Netlify, not
+    // Supabase - Supabase's Edge Functions gateway forces any text/html
+    // response containing a <script> tag down to text/plain with a CSP
+    // sandbox (a platform restriction, see the campusfind repo's og-preview
+    // function for where that was discovered), so this exact approach could
+    // not work there. Netlify has no such restriction.
+    window.location.replace(${JSON.stringify(LIBRARY_DOWNLOAD_URL)})
+  </script>
 </body>
 </html>`
 }
