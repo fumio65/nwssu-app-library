@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nwssu.campusfind",
+      "sha256_cert_fingerprints": [
+        "92:81:AD:48:C6:E6:55:A9:54:60:69:50:EB:5E:CF:51:BB:CC:AC:75:F7:C5:86:61:97:E5:F8:5F:21:BB:88:58",
+        "DC:5F:A1:4C:79:89:24:B8:B9:5B:E1:2F:8A:95:99:60:19:52:26:C3:4E:79:93:75:05:6A:BD:F1:3C:9E:B6:34"
+      ]
+    }
+  }
+]
