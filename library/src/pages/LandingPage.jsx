@@ -205,7 +205,7 @@ export default function LandingPage() {
                 <AppCard
                   key={app.id}
                   app={app}
-                  onClick={() => navigate(`/apps/${app.id}`)}
+                  onClick={() => navigate(`/apps/${app.slug ?? app.id}`)}
                 />
               ))}
             </div>

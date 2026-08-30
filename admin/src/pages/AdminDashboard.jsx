@@ -211,6 +211,7 @@ function ScreenshotUploader({ currentUrls, onUploaded }) {
 function AppModal({ app, onClose, onSave }) {
   const [form, setForm] = useState({
     name: app?.name ?? '',
+    slug: app?.slug ?? '',
     description: app?.description ?? '',
     category: app?.category ?? '',
     version: app?.version ?? '',
@@ -232,6 +233,7 @@ function AppModal({ app, onClose, onSave }) {
     setError(null)
     const payload = {
       name: form.name.trim(),
+      slug: form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || null,
       description: form.description.trim() || null,
       category: form.category.trim() || null,
       version: form.version.trim() || null,
@@ -263,6 +265,11 @@ function AppModal({ app, onClose, onSave }) {
 
         <Field label="App name" required>
           <input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. CampusFind" />
+        </Field>
+
+        <Field label="URL slug">
+          <input className={inputCls} value={form.slug} onChange={e => set('slug', e.target.value)} placeholder="e.g. campusfind" />
+          <p className="text-[11px] text-gray-400 mt-1">Used in the URL: /apps/<strong>{form.slug || 'slug'}</strong></p>
         </Field>
 
         <Field label="Description">
@@ -583,7 +590,7 @@ export default function AdminDashboard() {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/apple-touch-icon.png" alt="NwSSU Connect" className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100" />
+            <img src="/logo.png" alt="NwSSU Connect" className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100" />
             <div>
               <p className="text-sm font-bold text-gray-900">NwSSU Connect Admin</p>
               <p className="text-xs text-gray-400 hidden sm:block">Northwest Samar State University</p>

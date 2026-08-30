@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase'
 const BRAND = '#06433C'
 
 export default function AppDetailPage() {
-  const { id } = useParams()
+  const { slug } = useParams()
   const navigate = useNavigate()
   const [app, setApp] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -22,13 +22,13 @@ export default function AppDetailPage() {
       const { data } = await supabase
         .from('apps')
         .select('*')
-        .eq('id', id)
+        .eq('slug', slug)
         .single()
       setApp(data)
       setLoading(false)
     }
     fetchApp()
-  }, [id])
+  }, [slug])
 
   if (loading) {
     return (
