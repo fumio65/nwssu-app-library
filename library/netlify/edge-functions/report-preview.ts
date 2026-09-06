@@ -35,11 +35,13 @@ function renderPage({
   description,
   imageUrl,
   pageUrl,
+  reportId,
 }: {
   title: string
   description: string
   imageUrl: string | null
   pageUrl: string
+  reportId: string | null
 }): string {
   const safeTitle = escapeHtml(title)
   const safeDescription = escapeHtml(description)
@@ -83,16 +85,36 @@ function renderPage({
   <script>
     // Crawlers (Facebook/Messenger/etc.) never execute this - they only
     // read the og:* tags above, so the preview card still renders correctly.
-    // Real browsers run it immediately, sending a human here (no app
-    // installed - Android App Links intercepts the link before it ever
-    // reaches this page when the app IS installed) on to the download page.
-    // Safe here specifically because this page is served by Netlify, not
-    // Supabase - Supabase's Edge Functions gateway forces any text/html
-    // response containing a <script> tag down to text/plain with a CSP
-    // sandbox (a platform restriction, see the campusfind repo's og-preview
-    // function for where that was discovered), so this exact approach could
-    // not work there. Netlify has no such restriction.
-    window.location.replace(${JSON.stringify(LIBRARY_DOWNLOAD_URL)})
+    // Real browsers run it immediately. Safe here specifically because this
+    // page is served by Netlify, not Supabase - Supabase's Edge Functions
+    // gateway forces any text/html response containing a <script> tag down
+    // to text/plain with a CSP sandbox (a platform restriction, see the
+    // campusfind repo's og-preview function for where that was discovered),
+    // so this exact approach could not work there. Netlify has no such
+    // restriction.
+    //
+    // Android App Links intercept the tap and open the app directly to this
+    // report *only* when it goes through Android's normal link resolution -
+    // several chat apps (Messenger, Instagram, sometimes WhatsApp) open
+    // shared links in their own in-app browser instead, which skips that
+    // resolution and lands a human here even with the app installed. Plain
+    // navigation to the download page would strand them on the generic
+    // homepage instead of the report they tapped - so on Android, try an
+    // explicit intent: URI first, which reliably launches the installed app
+    // straight to this report regardless of how the tap got here, and only
+    // falls back to the download page (S.browser_fallback_url) if the app
+    // isn't installed. Every other platform keeps the original behavior.
+    if (/Android/i.test(navigator.userAgent) && ${JSON.stringify(reportId)}) {
+      window.location.replace(
+        ${JSON.stringify(`intent://${PUBLIC_SHARE_URL.replace(/^https?:\/\//, '')}/reports/`)} +
+          ${JSON.stringify(reportId)} +
+          '#Intent;scheme=https;package=com.nwssu.campusfind;S.browser_fallback_url=' +
+          encodeURIComponent(${JSON.stringify(LIBRARY_DOWNLOAD_URL)}) +
+          ';end'
+      )
+    } else {
+      window.location.replace(${JSON.stringify(LIBRARY_DOWNLOAD_URL)})
+    }
   </script>
 </body>
 </html>`
@@ -127,6 +149,7 @@ export default async (request: Request) => {
         description: 'This CampusFind report no longer exists.',
         imageUrl: null,
         pageUrl,
+        reportId: null,
       }),
       { status: 404, headers: htmlHeaders }
     )
@@ -137,7 +160,7 @@ export default async (request: Request) => {
     : null
 
   return new Response(
-    renderPage({ title: data.title!, description: data.description!, imageUrl, pageUrl }),
+    renderPage({ title: data.title!, description: data.description!, imageUrl, pageUrl, reportId: id }),
     { headers: htmlHeaders }
   )
 }
